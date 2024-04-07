@@ -1,10 +1,11 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const process = require("node:process");
 const ffmpeg = require("fluent-ffmpeg");
 
-const SRC_PATH = "./mp3";
-const OUTPUT_PATH = "./output";
-const FILE_EXT = ".mp3";
+const SRC_PATH = path.join(__dirname, "./mp3");
+const OUTPUT_PATH = path.join(__dirname, "/output");
+const FILE_EXTENSION = ".mp3";
 
 // get all the file names from the mp3 folder
 // have an array of the correct names
@@ -95,10 +96,20 @@ const song_titles = [
 ];
 
 if (songs.length !== song_titles.length) {
-  console.error("Mismatched length");
-  console.log(`Songs length: ${songs.length}`);
-  console.log(`Names length: ${song_titles.length}`);
-  return;
+  console.error(
+    `The amount of songs (${songs.length}) in ${SRC_PATH} doesn't match the amount of song title provided (${song_titles.length})`
+  );
+  process.exit(1);
+}
+
+if (!fs.existsSync(OUTPUT_PATH)) {
+  try {
+    fs.mkdirSync(OUTPUT_PATH);
+  } catch (error) {
+    console.log(`Error occurred creating output directory: ${error}`);
+    console.log("Stopping execution");
+    process.exit(1);
+  }
 }
 
 function createMetadata(title, track) {
@@ -119,10 +130,10 @@ for (let i = 0; i < songs.length; ++i) {
   const title = song_titles[i];
   const track = song.substring(0, song.indexOf(" "));
 
-  ffmpeg(path.join(__dirname, `${SRC_PATH}/${song}`))
+  ffmpeg(path.join(SRC_PATH, `/${song}`))
     .audioCodec("copy")
     .outputOptions(...createMetadata(title, track))
-    .output(path.join(__dirname, `${OUTPUT_PATH}/${title}${FILE_EXT}`))
+    .output(path.join(OUTPUT_PATH, `/${title}${FILE_EXTENSION}`))
     .on("end", () => console.log(`${title} has complete (${i}/${songs.length})`))
     .run();
 }
